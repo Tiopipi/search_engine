@@ -1,11 +1,27 @@
 import re
+import os
+import csv
 from collections import defaultdict
 import spacy
 
+# Cargar el modelo de spaCy para el procesamiento de lenguaje natural
+nlp_en = spacy.load('en_core_web_sm')
+nlp_es = spacy.load('es_core_news_sm')
+nlp_fr = spacy.load('fr_core_news_sm')
+nlp_it = spacy.load('it_core_news_sm')
+nlp_de = spacy.load('de_core_news_sm')
+nlp_pt = spacy.load('pt_core_news_sm')
 
-nlp = spacy.load('es_core_news_sm')
+# Stopwords de spaCy
 
-#stop_words = set(stop_words_en + stop_words_es + stop_words_de + stop_words_it + stop_words_pr + stop_words_fr)
+stop_words = set()
+stop_words = stop_words.union(nlp_en.Defaults.stop_words)
+stop_words = stop_words.union(nlp_es.Defaults.stop_words)
+stop_words = stop_words.union(nlp_fr.Defaults.stop_words)
+stop_words = stop_words.union(nlp_it.Defaults.stop_words)
+stop_words = stop_words.union(nlp_de.Defaults.stop_words)
+stop_words = stop_words.union(nlp_pt.Defaults.stop_words)
+print(stop_words)
 
 
 # Función para limpiar texto, eliminando signos de puntuación y pasando a minúsculas
@@ -13,15 +29,15 @@ def clean_text(text):
     text = re.sub(r'\W+', ' ', text).lower()
     words = text.split()
     # Filtrar stopwords
-    return [word for word in words if word not in nlp]
+    return [word for word in words if word not in stop_words]
 
 
-# Función para construir el índice invertido a nivel de word (con posiciones)
+# Función para construir el índice invertido con posiciones
 def build_indice_invertido_con_posiciones(documentos):
     indice_invertido = defaultdict(lambda: defaultdict(list))
 
     for doc_id, text in documentos:
-        words = clean_text(text).split()
+        words = clean_text(text)
 
         for posicion, word in enumerate(words):
             indice_invertido[word][doc_id].append(posicion)
@@ -100,17 +116,18 @@ def exportar_indice_invertido_a_csv(indice_invertido, output_file):
                 writer.writerow([word, doc_id, ','.join(map(str, posiciones))])
 
 
-# Ejemplo de documentos
-documentos = [
-    ("001", "the car is nice a"),
-    ("002", "that car is mine"),
-    ("003", "the car is the best")
-]
+# Directorio donde están los libros
+directorio_libros = 'Datalake/eventstore/Gutenbrg'
+
+# Cargar documentos y metadatos desde el directorio
+documentos, metadatos = cargar_libros_de_directorio(directorio_libros)
 
 # Construcción del índice invertido con posiciones
 indice_invertido = build_indice_invertido_con_posiciones(documentos)
 
-# Imprimir el índice invertido con posiciones
-imprimir_indice_invertido_con_posiciones(indice_invertido)
+# Exportar metadatos a un archivo CSV
+exportar_metadatos_a_csv(metadatos, 'Datamarts/Metadata Database/metadatos_libros.csv')
 
+# Exportar índice invertido a un archivo CSV
+exportar_indice_invertido_a_csv(indice_invertido, 'Datamarts/Inverted Index/indice_invertido.csv')
 
