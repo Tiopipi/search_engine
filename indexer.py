@@ -131,3 +131,4 @@ exportar_metadatos_a_csv(metadatos, 'Datamarts/Metadata Database/metadatos_libro
 # Exportar índice invertido a un archivo CSV
 exportar_indice_invertido_a_csv(indice_invertido, 'Datamarts/Inverted Index/indice_invertido.csv')
 
+export_record_level_inverted_index_to_csv(record_level_inverted_index, INVERTED_INDEX_RECORD_LEVEL_REPOSITORY)
