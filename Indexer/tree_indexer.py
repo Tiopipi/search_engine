@@ -1,7 +1,6 @@
 import json
 import re
 import os
-from collections import defaultdict
 import spacy
 
 
@@ -25,32 +24,28 @@ def build_inverted_index_with_positions(documents):
     inverted_index = {}
 
     for doc_id, text in documents:
-        original_words = text.split()  # Texto original para encontrar las posiciones reales
-        pos = 0  # Posición actual en el texto original
+        original_words = text.split()
+        pos = 0
 
-        # Mapeamos las palabras originales a sus posiciones, omitiendo las stop words para el índice
         for word in original_words:
-            clean_word = re.sub(r'\W+', '', word).lower()  # Limpiar y normalizar la palabra
-            is_stop_word = clean_word in stop_words  # Verificamos si es stop word
+            clean_word = re.sub(r'\W+', '', word).lower()
+            is_stop_word = clean_word in stop_words
 
-            if not is_stop_word and clean_word:  # Solo añadimos las no stop words al índice invertido
+            if not is_stop_word and clean_word:
                 if clean_word not in inverted_index:
-                    inverted_index[clean_word] = [[], [], []]  # [document_ids, positions, frequencies]
+                    inverted_index[clean_word] = [[], [], []]
 
-                # Si el documento no está ya presente en el índice para esta palabra, lo añadimos
                 if doc_id not in inverted_index[clean_word][0]:
                     inverted_index[clean_word][0].append(doc_id)
-                    inverted_index[clean_word][1].append([])  # Lista vacía para las posiciones en este documento
-                    inverted_index[clean_word][2].append(0)  # Inicializamos la frecuencia en 0
+                    inverted_index[clean_word][1].append([])
+                    inverted_index[clean_word][2].append(0)
 
-                doc_index = inverted_index[clean_word][0].index(doc_id)  # Encontrar la posición del doc_id
-                inverted_index[clean_word][1][doc_index].append(pos)  # Añadir la posición
-                inverted_index[clean_word][2][doc_index] += 1  # Aumentar la frecuencia en 1
+                doc_index = inverted_index[clean_word][0].index(doc_id)
+                inverted_index[clean_word][1][doc_index].append(pos)
+                inverted_index[clean_word][2][doc_index] += 1
 
-            # Incrementamos la posición actual del texto original, incluso si es una stop word
             pos += 1
 
-    # Formatear el índice invertido para el retorno
     formatted_inverted_index = {}
     for word, (doc_ids, positions, frequencies) in inverted_index.items():
         formatted_inverted_index[word] = [doc_ids, positions, frequencies]
@@ -95,7 +90,6 @@ def export_inverted_index_to_json_by_letter(inverted_index, base_directory):
         for i, doc_id in enumerate(doc_ids):
             book_name = doc_id
 
-            # Reemplazar el contenido en lugar de añadir
             letter_data[first_letter][word][book_name] = {
                 "positions": positions[i],
                 "frequency": frequencies[i]
@@ -108,7 +102,6 @@ def export_inverted_index_to_json_by_letter(inverted_index, base_directory):
 
         output_file = os.path.join(letter_directory, f'{first_letter}_words.json')
 
-        # Reemplazar completamente el archivo con el nuevo contenido
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(words, f, ensure_ascii=False, indent=4)
 

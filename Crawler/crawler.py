@@ -97,7 +97,7 @@ def run_crawler(category_url, num_books):
                     if txt_link:
                         global_counter += 1
 
-                        formatted_title = title.replace(' ', '_').replace(':', '').replace('/', '_')  # Format the title
+                        formatted_title = title.replace(' ', '_').replace(':', '').replace('/', '_')
                         file_name = f"{formatted_title}_{global_counter}.txt"
                         executor.submit(download_book, txt_link, file_name)
                         books_downloaded_in_block += 1
@@ -107,8 +107,8 @@ def run_crawler(category_url, num_books):
             block_number += 1
 
             if total_books_downloaded < len(book_page_links):
-                logging.info("Waiting 10 minutes before continuing with the next block of books...")
-                time.sleep(600)
+                logging.info("Waiting 30 minutes before continuing with the next block of books...")
+                time.sleep(1800)
     else:
         logging.info("No book pages found to process.")
 

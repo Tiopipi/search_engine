@@ -7,6 +7,7 @@ from flask_cors import CORS
 import os
 
 
+
 app = Flask(__name__)
 CORS(app)
 
@@ -26,12 +27,10 @@ def find_context_in_datalake(query_result):
 
                 words = content_later.split()
                 if 0 <= pos < len(words):
-                    # Si la posición es una de las primeras 10
                     if pos < 10:
-                        start = 0  # No hay suficientes palabras antes
-                        end = min(len(words), pos + 10)  # Hasta 10 palabras después
+                        start = 0
+                        end = min(len(words), pos + 10)
                     else:
-                        # Rango normal: 10 palabras antes y 10 después
                         start = max(0, pos - 10)
                         end = min(len(words), pos + 20 + 1)
 
@@ -90,21 +89,21 @@ def search_inverted_index(query, inverted_index):
     if len(words) == 0:
         return {"error": "Please provide at least one word in the query."}
 
-    common_docs = None
+    words = [word for word in words if word in inverted_index]
 
-    for word in words:
-        if word not in inverted_index:
-            return {"message": f"No results found for '{word}'"}
+    if len(words) == 0:
+        return {"message": "No words from the query are present in the inverted index."}
 
+    first_word = words[0]
+    common_docs = set(inverted_index[first_word].keys())
+
+    for word in words[1:]:
         current_docs = set(inverted_index[word].keys())
-
-        if common_docs is None:
-            common_docs = current_docs
-        else:
-            common_docs = common_docs.intersection(current_docs)
+        common_docs = common_docs.intersection(current_docs)
 
         if not common_docs:
             return {"message": f"No documents contain all the words: {', '.join(words)}"}
+
 
     results = {}
     for doc in common_docs:
@@ -122,7 +121,7 @@ def search_metadata(filters, metadata):
     results = []
 
     title_filter = filters.get('title', '').lower()
-    author_filter = filters.get('author', '').lower()  # Nuevo filtro para el autor
+    author_filter = filters.get('author', '').lower()
     year_filter = filters.get('year', '').strip()
     month_filter = filters.get('month', '').strip()
     day_filter = filters.get('day', '').strip()
@@ -173,7 +172,7 @@ def search_tree_inverted():
 @app.route('/search/metadata', methods=['GET'])
 def search_meta():
     title = request.args.get('title', '').strip()
-    author = request.args.get('author', '').strip()  # Nuevo parámetro de autor
+    author = request.args.get('author', '').strip()
     year = request.args.get('year', '').strip()
     month = request.args.get('month', '').strip()
     day = request.args.get('day', '').strip()
@@ -194,7 +193,7 @@ def search_meta():
 
 @app.route('/libros/<path:filename>')
 def serve_book(filename):
-    datalake_directory = os.path.join(os.getcwd(), 'Datalake', 'eventstore', 'Gutenbrg')  # Ajusta esta línea si es necesario
+    datalake_directory = os.path.join(os.getcwd(), 'Datalake', 'eventstore', 'Gutenbrg')
     try:
         return send_from_directory(datalake_directory, filename)
     except FileNotFoundError:

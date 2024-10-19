@@ -1,7 +1,6 @@
 import json
 import re
 from datetime import datetime
-
 from flask import Flask, request, jsonify, send_from_directory
 import csv
 from flask_cors import CORS
@@ -26,12 +25,10 @@ def find_context_in_datalake(query_result):
 
                 words = content_later.split()
                 if 0 <= pos < len(words):
-                    # Si la posición es una de las primeras 10
                     if pos < 10:
-                        start = 0  # No hay suficientes palabras antes
-                        end = min(len(words), pos + 10)  # Hasta 10 palabras después
+                        start = 0
+                        end = min(len(words), pos + 10)
                     else:
-                        # Rango normal: 10 palabras antes y 10 después
                         start = max(0, pos - 10)
                         end = min(len(words), pos + 20 + 1)
 
@@ -71,21 +68,21 @@ def search_inverted_index(query, inverted_index):
     if len(words) == 0:
         return {"error": "Please provide at least one word in the query."}
 
-    first_word = words[0]
-    if first_word not in inverted_index:
-        return {"message": f"No results found for '{first_word}'"}
+    words = [word for word in words if word in inverted_index]
 
+    if len(words) == 0:
+        return {"message": "No words from the query are present in the inverted index."}
+
+    first_word = words[0]
     common_docs = set(inverted_index[first_word].keys())
 
     for word in words[1:]:
-        if word not in inverted_index:
-            return {"message": f"No results found for '{word}'"}
-
         current_docs = set(inverted_index[word].keys())
         common_docs = common_docs.intersection(current_docs)
 
         if not common_docs:
             return {"message": f"No documents contain all the words: {', '.join(words)}"}
+
 
     results = {}
     for doc in common_docs:
@@ -103,7 +100,7 @@ def search_metadata(filters, metadata):
     results = []
 
     title_filter = filters.get('title', '').lower()
-    author_filter = filters.get('author', '').lower()  # Nuevo filtro para el autor
+    author_filter = filters.get('author', '').lower()
     year_filter = filters.get('year', '').strip()
     month_filter = filters.get('month', '').strip()
     day_filter = filters.get('day', '').strip()
@@ -118,7 +115,6 @@ def search_metadata(filters, metadata):
 
         entry_date = entry.get('release_date', '').strip()
         try:
-            # Extraer año, mes y día de la fecha en formato 'YYYY-MM-DD'
             entry_date_obj = datetime.strptime(entry_date, "%Y-%m-%d")
             entry_year = str(entry_date_obj.year)
             entry_month = str(entry_date_obj.month).zfill(2)
@@ -138,34 +134,31 @@ def search_metadata(filters, metadata):
     return results
 
 
-inverted_index = load_inverted_index_from_json('Datamarts/Inverted Index/word_level.json')
+
 metadata = load_metadata('Datamarts/Metadata Database/book_metadata.csv')
 
 
 @app.route('/search/word_level', methods=['GET'])
 def search_unique_json_inverted():
+    inverted_index = load_inverted_index_from_json('Datamarts/Inverted Index/word_level.json')
     query = request.args.get('query', '').strip()
     if not query:
         return jsonify({"error": "No search query provided"}), 400
 
-    # Llamar a la función de búsqueda
     results = search_inverted_index(query, inverted_index)
     results = find_context_in_datalake(results)
     return jsonify(results)
 
 
-# Ruta para realizar la búsqueda en los metadatos
 @app.route('/search/metadata', methods=['GET'])
 def search_meta():
-    # Parsear los parámetros de la consulta
     title = request.args.get('title', '').strip()
-    author = request.args.get('author', '').strip()  # Nuevo parámetro de autor
+    author = request.args.get('author', '').strip()
     year = request.args.get('year', '').strip()
     month = request.args.get('month', '').strip()
     day = request.args.get('day', '').strip()
     language = request.args.get('language', '').strip()
 
-    # Crear un diccionario con los filtros
     filters = {
         'title': title,
         'author': author,
@@ -175,21 +168,18 @@ def search_meta():
         'language': language
     }
 
-    # Realizar la búsqueda con los filtros
     results = search_metadata(filters, metadata)
     return jsonify(results)
 
 
-# Ruta para servir los libros
 @app.route('/libros/<path:filename>')
 def serve_book(filename):
-    datalake_directory = os.path.join(os.getcwd(), 'Datalake', 'eventstore', 'Gutenbrg')  # Ajusta esta línea si es necesario
+    datalake_directory = os.path.join(os.getcwd(), 'Datalake', 'eventstore', 'Gutenbrg')
     try:
         return send_from_directory(datalake_directory, filename)
     except FileNotFoundError:
         return jsonify({"error": "File not found"}), 404
 
 
-# Iniciar la aplicación
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5002)

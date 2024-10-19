@@ -1,7 +1,6 @@
 import json
 import re
 import os
-from collections import defaultdict
 import spacy
 
 nlp_en = spacy.load('en_core_web_sm')
@@ -30,29 +29,26 @@ def build_inverted_index_with_positions(documents):
     inverted_index = {}
 
     for doc_id, text in documents:
-        original_words = text.split()  # Texto original para encontrar las posiciones reales
-        pos = 0  # Posición actual en el texto original
+        original_words = text.split()
+        pos = 0
 
-        # Mapeamos las palabras originales a sus posiciones, omitiendo las stop words para el índice
         for word in original_words:
-            clean_word = re.sub(r'\W+', '', word).lower()  # Limpiar y normalizar la palabra
-            is_stop_word = clean_word in stop_words  # Verificamos si es stop word
+            clean_word = re.sub(r'\W+', '', word).lower()
+            is_stop_word = clean_word in stop_words
 
-            if not is_stop_word and clean_word:  # Solo añadimos las no stop words al índice invertido
+            if not is_stop_word and clean_word:
                 if clean_word not in inverted_index:
-                    inverted_index[clean_word] = [[], [], []]  # [document_ids, positions, frequencies]
+                    inverted_index[clean_word] = [[], [], []]
 
-                # Si el documento no está ya presente en el índice para esta palabra, lo añadimos
                 if doc_id not in inverted_index[clean_word][0]:
                     inverted_index[clean_word][0].append(doc_id)
-                    inverted_index[clean_word][1].append([])  # Lista vacía para las posiciones en este documento
-                    inverted_index[clean_word][2].append(0)  # Inicializamos la frecuencia en 0
+                    inverted_index[clean_word][1].append([])
+                    inverted_index[clean_word][2].append(0)
 
-                doc_index = inverted_index[clean_word][0].index(doc_id)  # Encontrar la posición del doc_id
-                inverted_index[clean_word][1][doc_index].append(pos)  # Añadir la posición
-                inverted_index[clean_word][2][doc_index] += 1  # Aumentar la frecuencia en 1
+                doc_index = inverted_index[clean_word][0].index(doc_id)
+                inverted_index[clean_word][1][doc_index].append(pos)
+                inverted_index[clean_word][2][doc_index] += 1
 
-            # Incrementamos la posición actual del texto original, incluso si es una stop word
             pos += 1
 
     return inverted_index

@@ -38,11 +38,6 @@
             width: 100%;
             box-sizing: border-box;
         }
-        .search-result {
-            margin-bottom: 15px;
-            padding: 10px;
-            border-bottom: 1px solid #ccc;
-        }
         .search-result h3 {
             margin: 0;
         }
@@ -65,7 +60,6 @@
     <div class="container">
         <h1>Query Engine</h1>
 
-        <!-- Form for Word Level search -->
         <h2>Word Level Search</h2>
         <form id="query-form-word">
             <label for="query-word">Enter your query:</label>
@@ -80,7 +74,6 @@
             <div id="context-container-word"></div>
         </div>
 
-        <!-- Form for Metadata search with filters -->
         <h2>Metadata Search</h2>
         <form id="query-form-metadata">
             <label for="query-title">Title:</label>
@@ -114,7 +107,6 @@
     </div>
 
     <script>
-        // Function to create a result element
         function createResultElement(title, filename, snippet) {
             const resultDiv = document.createElement('div');
             resultDiv.classList.add('search-result');
@@ -134,7 +126,6 @@
             return resultDiv;
         }
 
-        // Word Level search
         document.getElementById('query-form-word').addEventListener('submit', async function(event) {
     event.preventDefault();
 
@@ -142,13 +133,12 @@
     const resultDiv = document.getElementById('result-word');
     const resultContainer = document.getElementById('results-container-word');
     const contextContainer = document.getElementById('context-container-word');
-    resultContainer.innerHTML = '';  // Clear previous results
-    contextContainer.innerHTML = '';  // Clear previous context
+    resultContainer.innerHTML = '';
+    contextContainer.innerHTML = '';
 
-    // Build the search URL
+
     const url = `http://localhost:5002/search/word_level?query=${encodeURIComponent(query)}`;
 
-    // Call the backend using GET method
     try {
         const response = await fetch(url);
         if (!response.ok) {
@@ -158,27 +148,23 @@
         const data = await response.json();
         resultDiv.style.display = 'block';
 
-        // Check if there are results
         if (Object.keys(data).length === 0 || data.message) {
             resultContainer.textContent = data.message || 'No results found.';
             return;
         }
 
-        // Process results for each document
         Object.keys(data).forEach(doc => {
-            let snippet = `Document: ${doc}\n`; // Start with the document name
+            let snippet = `Document: ${doc}\n`;
 
-            // For each word in the query, show frequency, positions, and the paragraph (context)
             Object.keys(data[doc]).forEach(word => {
                 const frequency = data[doc][word].frequency;
                 const positions = data[doc][word].positions.join(', ');
-                const paragraph = data[doc][word].paragraph;  // The paragraph with the context
+                const paragraph = data[doc][word].paragraph;
 
-                // Append frequency, positions, and paragraph
                 snippet += `Found "${word}" ${frequency} times.\nPositions: ${positions}\nParagraph: ${paragraph}\n`;
             });
 
-            const filename = `${doc}`; // Adjust the filename display if necessary
+            const filename = `${doc}`;
             resultContainer.appendChild(createResultElement(doc, filename, snippet));
         });
 
@@ -218,7 +204,7 @@
                         const documentName = metadata.document || 'Document not available';
                         const filename = `${documentName}`;
                         const snippet = `Title: ${metadata.title}, Author: ${metadata.author}, Date: ${metadata.release_date}, Language: ${metadata.language}`;
-                        resultContainer.appendChild(createResultElement(documentName, filename, snippet, '')); // No hay párrafo en la búsqueda de metadatos
+                        resultContainer.appendChild(createResultElement(documentName, filename, snippet, ''));
                     });
                 } else {
                     resultContainer.textContent = 'No results found.';

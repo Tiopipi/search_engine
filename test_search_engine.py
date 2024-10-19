@@ -29,7 +29,7 @@ def test_execution_time_export_json_inverted_index(benchmark):
     documents = load_books_from_directory_json(books_directory)
     inveted_index = build_inverted_index_with_positions_json(documents)
     directory = 'Datamarts/Inverted Index/word_level.json'
-    benchmark.pedantic(export_inverted_index_json, args=(inveted_index, directory,), iterations=1, rounds=1)
+    benchmark.pedantic(export_inverted_index_json, args=(inveted_index, directory,), iterations=5, rounds=5)
 
 
 @pytest.mark.benchmark
@@ -39,25 +39,28 @@ def test_execution_time_export_tree_structure_inverted_index(benchmark):
     inverted_index = build_inverted_index_with_positions_tree(documents)
     directory = 'Datamarts/Inverted Index/Tree Data Structure'
 
-    benchmark.pedantic(export_inverted_index_to_json_by_letter, args=(inverted_index, directory,), iterations=1, rounds=1)
+    benchmark.pedantic(export_inverted_index_to_json_by_letter, args=(inverted_index, directory,), iterations=5, rounds=5)
 
 
-query = "African"
+queries = ["African", "History of Africa", "African people were slaves"]  # Lista de consultas
 
 
+@pytest.mark.parametrize("query", queries)
 @pytest.mark.benchmark(group="search_unique_json_inverted")
-def test_search_unique_json_data_structure(client_json, benchmark):
+def test_search_unique_json_data_structure(client_json, benchmark, query):
     def search_request():
         response = client_json.get(f'/search/word_level?query={query}')
         assert response.status_code == 200
 
-    benchmark.pedantic(search_request, iterations=1, rounds=1)
+    benchmark.pedantic(search_request, iterations=5, rounds=5)
 
 
+@pytest.mark.parametrize("query", queries)
 @pytest.mark.benchmark(group="search_tree_inverted")
-def test_search_tree_data_structure(client_tree, benchmark):
+def test_search_tree_data_structure(client_tree, benchmark, query):
     def search_request():
         response = client_tree.get(f'/search/word_level?query={query}')
         assert response.status_code == 200
 
-    benchmark.pedantic(search_request, iterations=1, rounds=1)
+    benchmark.pedantic(search_request, iterations=5, rounds=5)
+
